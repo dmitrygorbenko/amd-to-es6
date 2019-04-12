@@ -19,6 +19,7 @@ function convert (source, options) {
     options = options || {};
 
     var dependenciesMap = {};
+    var dependenciesOriginalNameMap = {};
     var syncRequires = [];
     var requiresWithSideEffects = [];
     var mainCallExpression = null;
@@ -100,6 +101,7 @@ function convert (source, options) {
         // if no import name assigned then create one
         if (!dependenciesMap[moduleName]) {
             dependenciesMap[moduleName] = makeImportName(node.arguments[0].value);
+            dependenciesOriginalNameMap[moduleName] = node.parent.id.name;
         }
 
         // replace with the import name
@@ -125,14 +127,22 @@ function convert (source, options) {
     });
 
     // start with import statements
-    var moduleCode = getImportStatements(dependenciesMap);
-
+    //var moduleCode = getImportStatements(dependenciesMap);
+    var moduleCode = getImportStatements(dependenciesOriginalNameMap);
+    
     // add modules code
     moduleCode += getModuleCode(moduleFunc);
 
     // fix indentation
     if (options.beautify) {
-        moduleCode = beautify(moduleCode, { indent_size: options.indent });
+        moduleCode = beautify(moduleCode, {
+            "indent_with_tabs": true,
+            "eol": "\n",
+            "end_with_newline": true,
+            "preserve_newlines": true,
+            "space_in_paren": false,
+            "space_in_empty_paren": false
+	    });
 
         // jsbeautify doesn't understand es6 module syntax yet
         moduleCode = moduleCode.replace(/export[\s\S]default[\s\S]/, 'export default ');
